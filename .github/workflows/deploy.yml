@@ -32,4 +32,4 @@ jobs:
       - name: Install dependencies
         run: yarn install --frozen-lockfile
       - name: Create static build
-        run: yarn build
+        run: yarn build:static
