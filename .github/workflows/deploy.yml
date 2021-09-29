@@ -33,10 +33,36 @@ jobs:
         run: yarn install --frozen-lockfile
       - name: Create static build
         run: yarn build:static
+      - uses: actions/upload-artifact@v2
+        with:
+          name: nextjs-static-build
+          path: './out' # or path/to/artifact
+      
+  aws-deployment:
+    # The type of runner that the job will run on and the dependency step
+    runs-on: ubuntu-latest
+    needs: build
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+    # Download published artifact
+      - name: Download artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: nextjs-static-build
+          path: './static-app'
+          
+    # Set AWS Credentials
       - uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-2
-      - run: aws s3 sync ./out s3://diogoaoliveira-next-js-boilerplate
-      - run: aws cloudfront create-invalidation --distribution-id E16TYAMWPZMHTM --paths /
+          
+    # Set AWS S3 upload
+      - name: S3 Upload files
+        run: aws s3 sync ./static-app s3://diogoaoliveira-next-js-boilerplate
+        
+    # AWS Cloudfront cache invalidation
+      - name: Cloudfront cache invalidation
+        run: aws cloudfront create-invalidation --distribution-id E16TYAMWPZMHTM --paths /
